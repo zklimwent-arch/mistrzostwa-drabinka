@@ -1,1 +1,198 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drabinka Mistrzostw</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --accent-color: #00ff88;
+            --border-color: #333333;
+            --tbd-color: #888888;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        /* Kontener drabinki - scrollowanie poziome na telefonach */
+        .bracket-container {
+            display: flex;
+            gap: 40px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 20px;
+        }
+
+        .round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            min-width: 280px;
+            scroll-snap-align: center;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        /* Karta pojedynczego meczu */
+        .match {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            /* Animacja wjazdu */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.6s ease forwards;
+        }
+
+        .team {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .team:last-child {
+            border-bottom: none;
+        }
+
+        .score {
+            font-weight: bold;
+        }
+
+        .tbd {
+            color: var(--tbd-color);
+            font-style: italic;
+        }
+
+        .winner {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Definicja animacji */
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mistrzostwa Świata - Faza Pucharowa</h1>
+    
+    <div class="bracket-container" id="bracket">
+        </div>
+
+    <script>
+        // ==========================================
+        // TWÓJ WŁASNY SILNIK DANYCH (Baza wyników)
+        // ==========================================
+        // Aktualizujesz ten obiekt, commitujesz na GitHubie, 
+        // a strona automatycznie zmienia wygląd!
+        
+        const myDataEngine = {
+            roundOf16: [
+                { id: 1, team1: "Polska", score1: 2, team2: "Francja", score2: 1, finished: true },
+                { id: 2, team1: "Hiszpania", score1: 0, team2: "Niemcy", score2: 0, finished: false },
+                { id: 3, team1: "Brazylia", score1: null, team2: "Argentyna", score2: null, finished: false },
+                { id: 4, team1: "TBD", score1: null, team2: "TBD", score2: null, finished: false } // TBD = Nieustalony
+            ],
+            quarterFinals: [
+                { id: 5, team1: "Polska", score1: null, team2: "TBD", score2: null, finished: false },
+                { id: 6, team1: "TBD", score1: null, team2: "TBD", score2: null, finished: false }
+            ]
+        };
+
+        // ==========================================
+        // LOGIKA GENEROWANIA DRABINKI I ANIMACJI
+        // ==========================================
+        
+        function renderTeam(name, score, isWinner, isTBD) {
+            const teamClass = isTBD ? "tbd" : (isWinner ? "winner" : "");
+            const displayScore = score !== null ? score : "-";
+            const displayName = isTBD ? "Nieustalony" : name;
+            
+            return `
+                <div class="team ${teamClass}">
+                    <span>${displayName}</span>
+                    <span class="score">${displayScore}</span>
+                </div>
+            `;
+        }
+
+        function renderMatch(match, delayIndex) {
+            const isTbd1 = match.team1 === "TBD";
+            const isTbd2 = match.team2 === "TBD";
+            
+            let winner1 = false;
+            let winner2 = false;
+
+            if (match.finished && match.score1 !== null && match.score2 !== null) {
+                winner1 = match.score1 > match.score2;
+                winner2 = match.score2 > match.score1;
+            }
+
+            // Opóźnienie animacji (kaskadowe ładowanie na telefonie)
+            const animationDelay = delayIndex * 0.15;
+
+            return `
+                <div class="match" style="animation-delay: ${animationDelay}s">
+                    ${renderTeam(match.team1, match.score1, winner1, isTbd1)}
+                    ${renderTeam(match.team2, match.score2, winner2, isTbd2)}
+                </div>
+            `;
+        }
+
+        function buildBracket() {
+            const container = document.getElementById('bracket');
+            let globalDelayIndex = 0;
+
+            // Renderuj 1/16 Finału
+            let html = '<div class="round"><h2>1/16 Finału</h2>';
+            myDataEngine.roundOf16.forEach(match => {
+                html += renderMatch(match, globalDelayIndex++);
+            });
+            html += '</div>';
+
+            // Renderuj Ćwierćfinały
+            html += '<div class="round"><h2>Ćwierćfinały</h2>';
+            myDataEngine.quarterFinals.forEach(match => {
+                html += renderMatch(match, globalDelayIndex++);
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Uruchomienie budowania po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', buildBracket);
+    </script>
+</body>
+</html>
 
