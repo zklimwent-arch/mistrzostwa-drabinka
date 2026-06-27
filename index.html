@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Drabinka Mistrzostw - Auto Live</title>
+    <title>Drabinka - Direct Engine</title>
     <style>
         :root {
-            /* Ciemny motyw - idealny pod ekrany AMOLED w telefonach */
+            /* Prawdziwa czerń (OLED Black) i mocny akcent */
             --bg-color: #000000;
-            --card-bg: #1a1a1a;
+            --card-bg: #121212;
             --text-color: #ffffff;
-            --accent-color: #00e676; /* Jaskrawy zielony dla widoczności */
-            --border-color: #333333;
-            --tbd-color: #666666;
+            --accent-color: #00ff88;
+            --border-color: #2a2a2a;
+            --tbd-color: #555555;
         }
 
         body {
@@ -21,147 +21,130 @@
             color: var(--text-color);
             margin: 0;
             padding: 15px;
-            overflow-x: hidden;
         }
 
         h1 {
             text-align: center;
-            font-size: 22px;
+            font-size: 20px;
             margin-bottom: 5px;
-            background: linear-gradient(90deg, #fff, #888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .live-badge {
-            display: table;
-            margin: 0 auto 25px auto;
-            padding: 4px 12px;
-            background-color: rgba(0, 230, 118, 0.1);
+        .status-bar {
+            text-align: center;
+            font-size: 11px;
             color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            animation: pulse 2s infinite;
+            margin-bottom: 20px;
+            font-family: monospace;
         }
 
         .bracket-container {
             display: flex;
-            gap: 30px;
+            gap: 20px;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             padding-bottom: 20px;
-            -webkit-overflow-scrolling: touch;
         }
 
         .round {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             min-width: 280px;
             scroll-snap-align: center;
         }
 
-        h2 {
+        .round-title {
             text-align: center;
-            font-size: 16px;
-            color: var(--tbd-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
         }
 
         .match {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 10px 15px;
         }
 
         .team {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            font-size: 16px;
+            padding: 6px 0;
+            font-size: 15px;
+        }
+
+        .team:first-child {
             border-bottom: 1px solid var(--border-color);
         }
 
-        .team:last-child {
-            border-bottom: none;
-        }
-
         .score {
-            font-weight: 800;
-            font-size: 18px;
-            background-color: #2a2a2a;
-            padding: 2px 8px;
-            border-radius: 6px;
+            font-weight: 700;
+            font-size: 16px;
         }
 
         .tbd { color: var(--tbd-color); }
         .winner { color: var(--text-color); font-weight: bold; }
-        .winner .score { color: var(--accent-color); background-color: rgba(0, 230, 118, 0.1); }
+        .winner .score { color: var(--accent-color); }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+        /* Animacja tylko dla zmieniających się wyników */
+        @keyframes flashUpdate {
+            0% { background-color: rgba(0, 255, 136, 0.3); }
+            100% { background-color: transparent; }
         }
+        .updated { animation: flashUpdate 1s ease-out; }
     </style>
 </head>
 <body>
 
-    <h1>Faza Pucharowa</h1>
-    <div class="live-badge">● AUTO-SYNC ON</div>
+    <h1>Drabinka Turniejowa</h1>
+    <div class="status-bar" id="status">● DIRECT CONNECTION: AKTYWNE</div>
     
     <div class="bracket-container" id="bracket">
-        <div style="text-align:center; width:100%; color:#888;">Łączenie z serwerem danych...</div>
-    </div>
+        </div>
 
     <script>
         // ==========================================
-        // AUTO-POBIERANIE Z INTERNETU (Bez API Key)
+        // SILNIK DIRECT FETCH (Błyskawiczny, bez proxy)
         // ==========================================
         
-        // Używamy darmowego, publicznego feedu z GitHuba (otwarte dane turniejowe)
-        // oraz publicznego proxy (AllOrigins), aby przeglądarka nie blokowała pobierania
-        const publicDataUrl = 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json';
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(publicDataUrl)}`;
+        // TUTAJ wklejasz bezpośredni, surowy link do pliku JSON w internecie
+        // Np. raw link z GitHuba, który serwuje dane w milisekundy.
+        const DIRECT_DATA_URL = 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json';
 
-        async function pobierzZInternetu() {
+        // Zmienna do śledzenia poprzednich danych (żeby animować tylko zmiany)
+        let poprzednieDane = null;
+
+        async function pobierzDaneBezposrednio() {
             try {
-                // Kod puka do darmowego proxy, które pobiera dla nas wyniki
-                const odpowiedz = await fetch(proxyUrl);
-                if (!odpowiedz.ok) throw new Error('Błąd sieci');
+                // Bezpośrednie uderzenie do źródła + timestamp, żeby ominąć pamięć podręczną (cache) telefonu
+                const odpowiedz = await fetch(`${DIRECT_DATA_URL}?t=${Date.now()}`);
                 
-                const daneProxy = await odpowiedz.json();
+                if (!odpowiedz.ok) throw new Error('Błąd połączenia');
                 
-                // Parsujemy pobrany tekst do obiektu
-                let liveData;
-                try {
-                    liveData = JSON.parse(daneProxy.contents);
-                } catch(e) {
-                    // W razie problemów z parsowaniem, ładujemy niezawodny plan B
-                    liveData = wygenerujZastepczeDane(); 
+                const aktualneDane = await odpowiedz.json();
+                
+                // Jeśli dane są inne niż poprzednio, przebuduj drabinkę
+                if (JSON.stringify(aktualneDane) !== JSON.stringify(poprzednieDane)) {
+                    zbudujDrabinke(aktualneDane);
+                    poprzednieDane = aktualneDane;
+                    document.getElementById('status').innerText = `● OSTATNIA AKTUALIZACJA: ${new Date().toLocaleTimeString()}`;
                 }
 
-                zbudujDrabinke(liveData);
-
             } catch (error) {
-                console.log("Serwer przeciążony, używam zapasowych danych open-source...");
-                zbudujDrabinke(wygenerujZastepczeDane());
+                console.warn("Brak połączenia, ponawiam próbę...");
+                // Gdy braknie neta, silnik po prostu czeka i nie psuje interfejsu
             }
         }
 
         // ==========================================
-        // BUDOWANIE INTERFEJSU
+        // RYSOWANIE INTERFEJSU
         // ==========================================
         function renderujDruzyne(nazwa, wynik, isWinner) {
-            const czyTBD = !nazwa || nazwa.includes("TBD") || nazwa === "Nieustalony";
+            const czyTBD = !nazwa || nazwa.includes("TBD");
             const klasaDruzyny = czyTBD ? "tbd" : (isWinner ? "winner" : "");
             const wyswietlanaNazwa = czyTBD ? "Nieustalony" : nazwa;
             const wyswietlanyWynik = (wynik !== null && wynik !== undefined) ? wynik : "-";
@@ -178,14 +161,14 @@
             const kontener = document.getElementById('bracket');
             let html = '';
 
-            // Mapujemy pobrane dane na 1/16 Finału (zakładamy strukturę JSON)
+            // Przykładowe przetwarzanie 1/16 Finału z surowego JSON-a
             if(dane.roundOf16) {
-                html += '<div class="round"><h2>1/16 Finału</h2>';
+                html += '<div class="round"><div class="round-title">1/16 FINAŁU</div>';
                 dane.roundOf16.forEach(mecz => {
                     let w1 = mecz.score1 > mecz.score2 && mecz.finished;
                     let w2 = mecz.score2 > mecz.score1 && mecz.finished;
                     
-                    html += `<div class="match">
+                    html += `<div class="match updated">
                         ${renderujDruzyne(mecz.team1, mecz.score1, w1)}
                         ${renderujDruzyne(mecz.team2, mecz.score2, w2)}
                     </div>`;
@@ -193,14 +176,14 @@
                 html += '</div>';
             }
 
-            // Mapujemy Ćwierćfinały
+            // Ćwierćfinały
             if(dane.quarterFinals) {
-                html += '<div class="round"><h2>Ćwierćfinały</h2>';
+                html += '<div class="round"><div class="round-title">ĆWIERĆFINAŁY</div>';
                 dane.quarterFinals.forEach(mecz => {
                     let w1 = mecz.score1 > mecz.score2 && mecz.finished;
                     let w2 = mecz.score2 > mecz.score1 && mecz.finished;
 
-                    html += `<div class="match">
+                    html += `<div class="match updated">
                         ${renderujDruzyne(mecz.team1, mecz.score1, w1)}
                         ${renderujDruzyne(mecz.team2, mecz.score2, w2)}
                     </div>`;
@@ -212,31 +195,14 @@
         }
 
         // ==========================================
-        // DANE ZAPASOWE (Gdy darmowe proxy ma czkawkę)
+        // ODPALENIE I PĘTLA CZASU RZECZYWISTEGO
         // ==========================================
-        function wygenerujZastepczeDane() {
-            // Kod automatycznie ładuje ten schemat, by strona nigdy nie była pusta.
-            return {
-                roundOf16: [
-                    { team1: "Polska", score1: 2, team2: "Francja", score2: 1, finished: true },
-                    { team1: "Hiszpania", score1: 0, team2: "Niemcy", score2: 0, finished: false },
-                    { team1: "Brazylia", score1: null, team2: "Argentyna", score2: null, finished: false },
-                    { team1: "TBD", score1: null, team2: "TBD", score2: null, finished: false }
-                ],
-                quarterFinals: [
-                    { team1: "Polska", score1: null, team2: "TBD", score2: null, finished: false },
-                    { team1: "TBD", score1: null, team2: "TBD", score2: null, finished: false }
-                ]
-            };
-        }
-
-        // ==========================================
-        // ODPALENIE SILNIKA
-        // ==========================================
-        pobierzZInternetu(); // Pobiera od razu po odpaleniu strony
         
-        // Pętla pobierająca nowości co 60 sekund w tle
-        setInterval(pobierzZInternetu, 60000); 
+        // Szybki start
+        pobierzDaneBezposrednio();
+        
+        // Pętla odpytująca bezpośrednio źródło co 15 sekund
+        setInterval(pobierzDaneBezposrednio, 15000); 
 
     </script>
 </body>
